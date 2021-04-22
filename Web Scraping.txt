@@ -1,0 +1,103 @@
+Web Scraping
+
+Tracking de precios de las acciones
+
+- Vamos a hacer un análisis un poco más humano de qué es lo que quiero sacar de información.
+Necesito:
+
+* Nombre
+* Fecha (base de datos)
+* Variación diaria (base datos, Dex)
+* Precio mínimo
+* Precio máximo
+* Monto operado
+
+- Lectura de la tabla
+
+Con el tag td accedo a las diferentes celdas de la tabla. 
+
+* Nombre: Tengo anidado un tag <i> con el atributo title data-original-title que me da el nombre de la empresa. También tengo un tag <a> con el mismo atributo y si voy al contenido del mismo tengo tanto el nombre de la empresa como su nombre en la bolsa (ver REGEX).
+
+* Último precio: Dentro de <td>, tengo el atributo data-field "UltimoPrecio" y se puede o bien sacar el precio desde el atributo data-order o bien como contenido de ese tag.
+
+* Variación: Siguiente <td>, tengo mismo caso de atributos que en UltimoPrecio. Dentro de <span> siguiente tengo el contenido que también me da el mismo dato.
+
+* Apertura, Mínimo, Máximo, Último Cierre: están en <td> con data-fields correspondientes a cada uno y data-orders con los valores o contenidos de los <td>.
+
+* Monto operado: Contenido de tag <td class = "tar">
+
+* Fecha/hora: En la siguiente <td class = "tar">, tengo anidados 2 <span>. Está en el segundo, y es la que tiene el atributo "data-field" = "FechaHoraFormated". El contenido es el dato que tengo que sacar.
+
+
+Python search with Beautiful Soup:
+
+- Busco la tabla que está identificada con el id "cotizaciones"
+- Dentro de la tabla, me armo una tabla con las filas, que tienen el tag <tr>
+- Luego, por cada fila, busco todos los tags <td> que corresponden con cada una de las celdas
+
+
+28/08: Formato de datos de hora y fecha del día anterior:
+
+['\n', <span class="tooltiper" data-original-title="Última: 17:00 hs.">
+<span data-field="FechaHoraFormated">
+                        27/08
+                    </span>
+</span>, '\n']
+
+Formato del mismo día:
+
+['\n',
+ <span class="tooltiper" data-original-title="Cotización de hoy">
+ <span data-field="FechaHoraFormated">
+                         03:00:01
+                     </span>
+ </span>,
+ '\n']
+
+Este formato puede ser el que se da fuera de los horarios de actualización (estimo lun-vie de 9/10 a 17 hs). Chequear hora de apertura.
+ 
+Idea de parsing: Buscar dónde tengo [0-2][0-9]:[0-5][0-9] y dónde [0-3][0-9]/[0-1][0-9]. Para encontrar ese elemento, buscar "FechaHoraFormated"
+
+Categorías [3-6] : [CantidadCompra-PrecioCompra-PrecioVenta-CantidadVenta] pueden tener "-", quiere decir que no presenta variaciones. Nota: creo que es info confidencial de la página!! Todas las filas dicen lo mismo
+
+
+Formato de nombre y símbolo:
+['\n', <i class="icono-simbolo mr10 fl yhoo" data-placement="top" data-toggle="tooltip" title="Yahoo!"></i>, '\n', <a data-placement="top" data-toggle="tooltip" href="/Titulo/Index/2843" title="Yahoo!">
+<b>
+                        YHOO
+                    </b>
+<br/>
+<span style="font-size: 11px;">
+                        Yahoo!
+                    </span>
+</a>, '\n']
+
+Buscar el tag que empiece con a. O el que tenga el atributo 'href'. N de la R: mi función de clear_data original tiene dobles barras, no recuerdo por qué pero me aparecían. Para limpiar el nombre necesito que sea la barra simple. 
+Le puse para que me borre el espacio como el original con la idea de que 
+
+04/09: Estoy spliteando nombre y simbolo de la acción, y el problema que tengo es que cuando los junto, si la empresa tiene el nombre en mayúscula me termina quedando mal parseado. Posible solución: agarrar el nombre de la empresa del atributo 'title' del tag correspondiente y después de limpiar los strings, buscar con REGEX o similar el substring para quedarme con el resto.
+
+Nueva info: Si hago eso, hay algunos nombres que no entran completos en la pantalla y los muestran truncados con puntos suspensivos, entonces no los voy a encontrar como substring. Una posible solución es tomar la primera palabra o las primeras x letras. RTA: Tomé 2 porque hubo un caso que después de las 2 letras tenía UN espacio.
+Casi que funcó perfecto, pero hay un par de casos que no me gustaron. Posible conflicto porque hay una parte que elimina todos los espacios:
+
+- Nombres: 'Harmony Gold ' (espacio final, ok), 'Hershey Foods -Cex.' (espacio no simétrico, ok), 'JD.COM,\xa0INC.' ('JD.COM,&nbsp;INC', tengo caracteres al p2), 'Tyco Internationalcta.Ext' (ok), 'Vodafone Airtouch L. P.-Cex' (ok)
+
+stock_names = ['Apple', 'AMBEV S.A.', 'ABN Amro Holdings', 'Abbott Laboratories', 'Adobe Systems Incorporated', 'ADECOAGRO S.A.', 'Analog Devices', 'AES', 'Royal Ahol', 'American International Group', 'Akzo Nobel', 'Alcatel Alsthom', 'Alstom', 'Applied Materials', 'ADVANCED MICRO DEVICES, INC.', 'Amgen', 'America Movil', 'Amazon.com Inc.', 'ARCOS DORADOS HOLDINGS INC.', 'Arconic Inc', 'Cedear Yamana Gold Inc.', 'Aventis', 'Avon Products', 'Avery Dennison', 'American Express', 'Cedear Aztrazden', 'AutoZone', 'Boeing', 'Bank of America', 'ALIBABA GROUP HOLDING LIMITED', 'Blackberry', 'Banco Bradesco S.A.', 'Banco Bilbao Vizcaya Argentaria', 'Barclays', 'British Energy', 'Baidu', 'Biogen Inc.', 'Bank of New York Mellon', 'BP', 'BRF S.A.', 'Cedear Banco Santander (Brasil) S.A.', 'British Telecommunications Pic', 'Citigroup', 'Cardinal Health', 'Caterpillar', 'Chubb', 'Cendant', 'COEUR MINING', 'China Mobile', 'Colgate-Palmolive', 'Costco Wholesale', 'Compaq Computer', 'Salesforce.com Inc.', 'Cisco Systems', 'Cadbury Schweppes', 'Chevron', 'Cemex', 'Groupe Danone', 'Daimler Chrysler Ag', 'E.I. DuPont de Nemours', 'Deere', 'Dell Computer-Block', 'DESPEGAR.COM, CORP.', 'Disney Common Stock Escrit.', 'Deutsche Telekom', 'Deutsche Telecom Ag-Cta.Ext', 'eBay', 'EMC', 'E. On Ag', 'LM Ericsson Telephone', 'EMBRAER-EMPRESA BRASILEIRA DE AERONÁUTICA S.A.', 'Facebook Inc.', 'Freeport-Mcmoran Copper & Gold', 'First Data', 'FedEx', 'Femsa', 'First Solar', 'Guidant', 'General Electric', 'GERDAU S.A.', 'GILEAD SCIENCES, INC.', 'GLOBANT S.A.', 'Corning', 'CEDEAR Barrick Gold Corp.', 'Google', 'Garmin LTD.', 'THE GOLDMAN SACHS GROUP, INC', 'GlaxoSmithKline', 'Home Depot', 'Harley Davidson', 'Hillenbrand', 'Honda Motor', 'Harmony Gold ', 'Honeywell International', 'Hewlett-Packard', 'Cedear Hsbc', 'Hershey', 'Hershey Foods -Cex.', 'International Business Machines', 'Int.Business M.Corp.-Ibm -Block', 'Imperial Chemical', 'ING Groep', 'Intel', 'International Paper', 'ITAÚ UNIBANCO HOLDING S.A.', 'Sun Microsystems', 'JD.COM,\xa0INC.', 'Johnson & Johnson', 'Jpmorgan Chase', 'KLA-Tencor', 'Kimberly-Clark', 'Coca-Cola', 'Mbna', 'Eli Lilly', 'Lockheed Martin', 'Lockheed Martin-Par', 'Lucent Technologies', 'Southwest Airlines', 'Las Vegas Sands', "McDonald's", 'McKesson', 'Medtronic', 'MercadoLibre', 'Merrill Lynch & Co', 'Merrill Lynch & Co Cta.Ext.', 'Marsh & McLennan', '3M', 'Altria Group', 'Modine Manufacturing', 'Merck', 'Microsoft', 'Motorola', 'Mitsubishi Tokyo Financial G.', 'Netflix Inc.', 'Norsk Hydro Asa', 'Nike', 'Nokia', 'Nippon Telegraph & Telephone', 'Nucor', 'Nvidia Corporation', 'Newell Rubbermaid', 'Gazprom Pjsc', 'Orange', 'Oracle', 'Pitney Bowes', 'Petroleo Brasileiro S.A.', 'Phelps Dodge', 'PepsiCo', 'Pepsico Cta. Ext.', 'Pfizer', 'Procter & Gamble', 'Pharmacia', 'Phillips Electronics', 'Pechiney Sa', 'Paypal Holdings Inc.', 'QUALCOMM', 'Recibo Represent.Canasta Telebras', 'Royal Dutch Petroleum Co', 'CEDEAR ROYAL DUTCH SHELL PLC', 'Rio Tinto', 'United Technologies', 'Sprint Nextel', 'SAP', 'Satyam Computer Services', 'COMPANHIA DE SANEAMENTO BÁSICO DO ESTADO DE SÃO PAULO-SABESP', 'Starbucks', 'Sigma-Aldrich', 'COMPANHIA SIDERÚRGICA NACIONAL', 'Schlumberger', 'Schlumberger Cta.Ext.', 'Solectron', 'Snap-On', 'SNAP INC.', 'Sony Corporation', 'Sun Microsystems Cta.Ext', 'SUZANO SA', 'At&T', 'Thompson Creek Metals', 'Toronto-Dominion Bank', 'Tenaris CEDEAR ADR', 'Teradyne', 'TARGET CORPORATION', 'Telecom Italia', 'Thermo Fisher Scientific Inc.', 'Telefonos de Mexico', 'Total', 'Tripadvisor Inc.', 'Tesla Inc.', 'TIM PARTICIPAÇÕES S.A.', 'Grupo Televisa', 'Twitter Inc.', 'Texas Instruments', 'Texas Instruments Cta.Ext', 'Ternium', 'Tyco International', 'Tyco Internationalcta.Ext', 'ULTRAPAR PARTICIPAÇÕES S.A.', 'VISA INC', 'Vale', 'Vista Oil & Gas', 'TELEFÔNICA BRASIL S.A.', 'Vodafone Group', 'Vodafone Airtouch L. P.-Cex', 'VERISIGN, INC.', 'CEDEAR Verizon Communications Inc.', 'Wells Fargo', 'Wal-Mart Stores', 'WM. Wrigley Jr.', 'United States Steel', 'Exxon Mobil', 'Xerox', 'YELP INC.', 'Yahoo!']
+
+- Símbolos: 'ALAAlcatel' -> 'ALA' (Alcatel), 'CPQCompaq' -> 'CPQ' (Compaq Comp...), 'ERJEMBRAER-' -> 'ERJ' (EMBRAER-EMPRESA BRASILEIRA DE AERONAUTICA...), 'JNJJohnson&' -> 'JNJ' (Johnson & Johnson), 'KOCoca-' -> 'KO' (Coca-Cola), 'RCTB4Recibo' -> 'RCTB4' (Recibo Represen...), 'TSUTIMPAR' -> 'TSU' (TIM PARTICIP...)
+
+index_list = [ [stock_symbols[i].rindex(real_symb) for item in real_symb] for i in range(len(stock_symbols))]
+
+
+NOTA IMPORTANTE: el símbolo de la acción está entre los tags <b> y </b>. Ver si hay forma de engancharlo en Beautiful Soup.
+Funcó! Es tag.b(entre los tags <b>).contents(lo que está adentro)[0](me devuelve una lista de tamaño). 
+
+Toca revisar el código de la fecha. Los dos casos son si la fecha de hoy o es una anterior. En ambos casos tengo la última hora. Si veo que en el campo data-original-title dice "hoy", la cotización es de hoy gagaga, y la hora la saco como contenido del tag span data-field fecha...formated. Si no es de hoy, me sale el día como contenido de span data-field fecha...formated y en el campo data-original-title del tag span me dice "Última: 17:00 hs."
+
+Resultado de date_tag.span: <span data-field="FechaHoraFormated">
+                        04/09
+                    </span>
+
+El caso fin de semana funca, falta ver en la semana si lo hace también el resto de los días.
+
+

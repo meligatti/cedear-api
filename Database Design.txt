@@ -1,0 +1,10 @@
+Base de datos CEDEARs:
+
+Recojo los datos de: nombre, símbolo, último precio, variación, apertura, mínimo, máximo, monto operado, fecha/hora.
+
+Mi primary key puede ser el simbolo (pref) o el nombre. Por otra parte, tengo que representar una matriz bidimensional.
+Otra opción sería representar la base de datos como un conjunto de tablas donde cada tabla representa a una empresa. En ese caso, el ID sería la fecha o asociado a ella.
+
+Como sólo puedo obtener esos datos que no son en tiempo real, me conviene correrlo una vez al día en días hábiles y fuera del horario de trabajo.
+ 
+Nota: si la fecha la tengo como primary key en todas las tablas de las empresas, si por alguna de esas casualidades la llego a modificar. 
