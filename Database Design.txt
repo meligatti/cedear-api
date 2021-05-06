@@ -8,3 +8,46 @@ Otra opción sería representar la base de datos como un conjunto de tablas dond
 Como sólo puedo obtener esos datos que no son en tiempo real, me conviene correrlo una vez al día en días hábiles y fuera del horario de trabajo.
  
 Nota: si la fecha la tengo como primary key en todas las tablas de las empresas, si por alguna de esas casualidades la llego a modificar. 
+
+
+Mepa que tengo un problema que es que estoy usando como foreign key una que no es la primary key en la otra tabla de la db. -> ERA ESO
+
+Ver si se puede eliminar el id de la tabla date_ids y tener la fecha como primary key.
+
+# company_query = """
+        #         CREATE TABLE IF NOT EXISTS
+        #         """ + key + """(
+        #             DATE_ID INT,
+        #             OPENING NUMERIC(8,2),
+        #             CLOSING NUMERIC(8,2),
+        #             MIN_PRICE NUMERIC(8,2),
+        #             MAX_PRICE NUMERIC(8,2),
+        #             AMOUNT_EXCHANGED NUMERIC(11,0),
+        #             DAILY_VARIATION NUMERIC(4,2),
+        #             FOREIGN KEY (DATE_ID) REFERENCES date_ids(ID)
+        #         );
+        #         """
+
+(salida python vs pagina)
+
+VZ: Está puesto una vez solo. Daily variation (0.24 vs 0.58), opening igual, min_price(4673 vs 4682), max_price (4736.5 vs 4735,00), amount_exchanged (8661691 vs
+NOTA: Se me copian correctamente los datos de la tabla, que son coherentes pero no son del todo exactos.
+
+Desde AAPL hasta MELIC inclusive, no se me copió ningún dato en la base.
+
+
+company_query = """
+                CREATE TABLE IF NOT EXISTS
+                """ + key + """(
+                    date_id INT NOT NULL AUTO_INCREMENT,
+                    opening NUMERIC(8,2),
+                    closing NUMERIC(8,2),
+                    min_price NUMERIC(8,2),
+                    max_price NUMERIC(8,2),
+                    amount_exchanged NUMERIC(11,0),
+                    daily_variation NUMERIC(4,2),
+                    FOREIGN KEY (date_id) REFERENCES date_ids(id)
+                );
+                """
+
+	  
