@@ -215,7 +215,7 @@ if __name__ == "__main__":
     host_name = "localhost"
     user_name = "root"
     user_password = "Darkwater_06"
-    db = "stock_prices_db"
+    db = "cedear_db"
 
     # Execute these lines to create the database. It doesn't overwrite an existing one with same name.
     conn = sqlh.create_connection(host_name, user_name, user_password)
