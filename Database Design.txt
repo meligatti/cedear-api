@@ -50,4 +50,30 @@ company_query = """
                 );
                 """
 
-	  
+Datos Apple tabla IOL:
+- OPENING: 2036
+- CLOSING: 2042.5
+- MIN_PRICE: 2013.5
+- MAX_PRICE: 
+
+
+
+Como fanática de la tecnología, busco desenvolverme en desarrollo de software e integrar mis conocimientos. También espero aprender del funcionamiento del mercado financiero. 
+CV: https://drive.google.com/file/d/1IcQZ0v6-UDpr4sMPt3l-pNc4uY1av9cG/view
+
+
+
+Para chequear que ya se escribió la lista de valores relacionada a esa fecha, busco el último record (siendo estrictos, tendría que buscar en la lista de fechas que podría estar espejada porque se supone que está actualizada cronológicamente) y comparo con la fecha que estoy analizando ahora.
+
+Más desde lo técnico, tengo que hacer SELECT para la db date_ids e ir comparando con el campo date de la misma. Debería probar qué pasa con datos removidos en el medio, pero puede que sea problema de reescribir la base.
+
+
+Tengo que agarrar los dos primeros elementos y hacer una base nueva porque pasaron cosas.
+
+
+
+
+--- Volver a ver el diseño de la base de datos
+--- Ver cómo exportar el contenido de la base de datos para ser graficada (vale la pena?) Se perdería la esencia del programa que es Web Scraping + Base de Datos.
+--- Corregir lo del año 2020 porque es al pedo que ocupe ese espacio (verificar formato date en MySQL)
+

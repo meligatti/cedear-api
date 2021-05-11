@@ -8,8 +8,6 @@ def today_formatted_string():
 class Stock:
     def __init__(self):
         self.name = ""
-        #TODO: Replace this definition for the one upwards
-        # self.date = date.today().strftime("%Y-%m-%d %H:%M:%S")
         self.date = today_formatted_string()
         # Hora sujeta a empresa (3 am o 5 pm)
         self.hour = "03:00" 
