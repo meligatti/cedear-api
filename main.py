@@ -11,12 +11,8 @@ import sqlhandler as sqlh
 from datetime import date
 from datetime import datetime
 
-def check_date_consistency(stock_dict, connection):
-    curr_date = stock_dict['PCAR'].date
 
-
-
-def create_db_tables(stock_dict, connection):
+def create_db_tables(connection, stock_dict):
     primary_query = """
         CREATE TABLE IF NOT EXISTS date_ids (
             id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -26,6 +22,8 @@ def create_db_tables(stock_dict, connection):
     sqlh.execute_query(connection, primary_query)
 
     for key in stock_dict:
+        # Here the name of the stock is modified if it can cause any error on table creation
+        # Continues on line 74.
         key = tp.fix_stock_name(key)
         company_query = """
                 CREATE TABLE IF NOT EXISTS
@@ -44,18 +42,23 @@ def create_db_tables(stock_dict, connection):
 
 
 def add_stock_data(connection, stock_dict):
-    # All the stocks were tracked on the same dates, 'AAPL' was selected just because it's the first named
-    key = 'PCAR'
-    company_stock = stock_dict[key]
+    # All the stocks were tracked on the same dates, 'AAPL' was selected just because it's the first named and it's not
+    # a new stock in the market.
+
+    # Here it's inserted a new date
+    key = 'AAPL'
+    # The key must be uppercase
+    company_stock = stock_dict[key.upper()]
     date_query = """INSERT INTO date_ids(date)
                     VALUES (%s)"""
     insert_date_tuple = (company_stock.date, )
     sqlh.execute_insertion_query(connection, date_query, insert_date_tuple)
+
+    # This code writes the downloaded information on each company table
     for key in stock_dict:
         company_stock = stock_dict[key]
         curr_date = company_stock.date
         date_id_query = """SELECT * FROM date_ids WHERE date = %s"""
-        # print(datetime.strptime(curr_date, '%Y-%m-%d'))
         date_id_found = sqlh.execute_read_query(connection, date_id_query, (datetime.strptime(curr_date, '%Y-%m-%d'),))
         date_id = date_id_found[0][0]
 
@@ -67,11 +70,19 @@ def add_stock_data(connection, stock_dict):
                               company_stock.max_price, company_stock.amount_exchanged, company_stock.daily_variation)
         sqlh.execute_insertion_query(connection, stock_data_query, insert_stock_tuple)
 
-def read_random_stock(connection):
-    # There were some stocks which name have a point.
+def read_db(connection):
+    # There were some stocks which names contain a point. To be able to query the corresponding table, you should
+    # replace the point with an underscore.
+    # In the case of the stock named 'MOD', it's called as a MySQL operator. For this reason, it's renamed as 'MOD_STK'
+
+    # If you want to select a single stock, it's important to put its name between brackets
+    # selected_companies = ['aapl']
     selected_companies = ['aapl', 'ba_c', 'mod_stk']
-    desired_date = (datetime(2021, 5, 6), datetime(2021, 5, 7))
-    dates_length = len(desired_date)
+    # If you want to select a specific date (not an interval), you should put it between parenthesis and with a comma
+    # at the end, like in the following line:
+    # desired_dates = (datetime(YYYY, MM, DD),)
+    desired_dates = (datetime(2021, 5, 11), datetime(2021, 5, 12))
+    dates_length = len(desired_dates)
 
     if dates_length == 1:
         read_date_query = """SELECT * FROM date_ids WHERE date = %s"""
@@ -80,7 +91,7 @@ def read_random_stock(connection):
     else:
         read_date_query = """SELECT * FROM date_ids"""
 
-    date_list = sqlh.execute_read_query(connection, read_date_query, desired_date)
+    date_list = sqlh.execute_read_query(connection, read_date_query, desired_dates)
     id_row = 0
     date_row = 1
 
@@ -98,18 +109,10 @@ def read_random_stock(connection):
         print('\n')
         result_dict[company] = stock_list
 
-    # read_single_query = """
-    #     SELECT OPENING, CLOSING, MIN_PRICE, MAX_PRICE, AMOUNT_EXCHANGED, DAILY_VARIATION FROM """ + selected_companies + " WHERE DATE_ID = " + str(id)
-    # read_single_query = """SELECT * FROM """ + selected_companies + " WHERE DATE_ID = " + str(id)
-    # print(read_single_query)
-    # The element returned is a list with the values of all the fields of that row.
-    # company_row = sqlh.execute_read_query(connection, read_single_query)
-    # Here I skipped the first element corresponding to the date id.
-    # company_row = company_row[0][1:]
-
 
 def main():
 
+    # Load into a variable the HTML code of the page
     url = 'https://www.invertironline.com/mercado/cotizaciones/argentina/cedears/todos'
     response = requests.get(url)
     web_content = BeautifulSoup(response.text, 'lxml')
@@ -205,28 +208,34 @@ def main():
 
 
 if __name__ == "__main__":
-    stock_list = main()
-    # If applies
+    # It generates a dictionary of Stock objects with all the daily parameters read from "Invertir Online" inside.
+    # These are: opening, closing, minimum price, maximum price, daily variation and amount exchanged.
+    stock_dict = main()
+    # Database configuration
     host_name = "localhost"
     user_name = "root"
     user_password = "Darkwater_06"
     db = "stock_prices_db"
-    # db = "concha"
 
-    # Execute these lines if database is not created
-    # conn = sqlh.create_connection(host_name, user_name, user_password)
-    # create_db_query = """CREATE DATABASE """ + db
-    # sqlh.execute_query(conn, create_db_query)
-    # conn.close()
+    # Execute these lines to create the database. It doesn't overwrite an existing one with same name.
+    conn = sqlh.create_connection(host_name, user_name, user_password)
+    create_db_query = """CREATE DATABASE IF NOT EXISTS """ + db
+    sqlh.execute_query(conn, create_db_query)
+    conn.close()
 
     conn = sqlh.create_connection(host_name, user_name, user_password, db)
 
-    # Borro la database para empezar otra vez
+    # This function is necessary to be able to create a table and track a possible new stock. It doesn't overwrite
+    # the existing ones.
+    create_db_tables(conn, stock_dict)
+    # It stores the downloaded data in the database
+    add_stock_data(conn, stock_dict)
+
+    # This function is used to print stock parameters on selected date(s). The user can edit the variables named
+    # selected companies and desired dates.
+    read_db(conn)
+    conn.close()
+
+    # If you need to erase the database, execute this lines
     # erase_db_query = "DROP DATABASE " + db
     # sqlh.execute_query(conn, erase_db_query)
-
-    create_db_tables(stock_list, conn)
-    add_stock_data(conn, stock_list)
-
-    # read_random_stock(conn)
-    conn.close()
