@@ -55,20 +55,28 @@ def add_stock_data(connection, stock_dict):
     sqlh.execute_insertion_query(connection, date_query, insert_date_tuple)
 
     # This code writes the downloaded information on each company table
+    ref_string = 'pbi'
     for key in stock_dict:
-        company_stock = stock_dict[key]
-        curr_date = company_stock.date
-        date_id_query = """SELECT * FROM date_ids WHERE date = %s"""
-        date_id_found = sqlh.execute_read_query(connection, date_id_query, (datetime.strptime(curr_date, '%Y-%m-%d'),))
-        date_id = date_id_found[0][0]
+        # if min(key.lower(), ref_string) == ref_string:
+            print(key)
+            # if key.lower() == ref_string:
+            #     date_id = 13
+            # else:
+            company_stock = stock_dict[key]
+            curr_date = company_stock.date
+            date_id_query = """SELECT * FROM date_ids WHERE date = %s"""
+            date_id_found = sqlh.execute_read_query(connection, date_id_query, (datetime.strptime(curr_date, '%Y-%m-%d'),))
+            date_id = date_id_found[0][0]
+            print(key)
+            print(date_id_found)
 
-        stock_data_query = """
-            INSERT INTO """ + key + """(DATE_ID, OPENING, CLOSING, MIN_PRICE, MAX_PRICE, AMOUNT_EXCHANGED, DAILY_VARIATION)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            stock_data_query = """
+                INSERT INTO """ + key + """(DATE_ID, OPENING, CLOSING, MIN_PRICE, MAX_PRICE, AMOUNT_EXCHANGED, DAILY_VARIATION)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)"""
 
-        insert_stock_tuple = (date_id, company_stock.opening, company_stock.closing, company_stock.min_price,
-                              company_stock.max_price, company_stock.amount_exchanged, company_stock.daily_variation)
-        sqlh.execute_insertion_query(connection, stock_data_query, insert_stock_tuple)
+            insert_stock_tuple = (date_id, company_stock.opening, company_stock.closing, company_stock.min_price,
+                                  company_stock.max_price, company_stock.amount_exchanged, company_stock.daily_variation)
+            sqlh.execute_insertion_query(connection, stock_data_query, insert_stock_tuple)
 
 def read_db(connection):
     # There were some stocks which names contain a point. To be able to query the corresponding table, you should
@@ -214,8 +222,8 @@ if __name__ == "__main__":
     # Database configuration
     host_name = "localhost"
     user_name = "root"
-    user_password = "your_password"
-    db = "cedear_db"
+    user_password = "Darkwater_06"
+    db = "14th_jun_db"
 
     # Execute these lines to create the database. It doesn't overwrite an existing one with same name.
     conn = sqlh.create_connection(host_name, user_name, user_password)
@@ -233,7 +241,7 @@ if __name__ == "__main__":
 
     # This function is used to print stock parameters on selected date(s). The user can edit the variables named
     # selected companies and desired dates.
-    read_db(conn)
+    # read_db(conn)
     conn.close()
 
     # If you need to erase the database, execute this lines
