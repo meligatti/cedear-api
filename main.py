@@ -11,6 +11,8 @@ import sqlhandler as sqlh
 from datetime import date
 from datetime import datetime
 
+import stockplot as sp
+
 
 def create_db_tables(connection, stock_dict):
     primary_query = """
@@ -22,8 +24,7 @@ def create_db_tables(connection, stock_dict):
     sqlh.execute_query(connection, primary_query)
 
     for key in stock_dict:
-        # Here the name of the stock is modified if it can cause any error on table creation
-        # Continues on line 74.
+        # Here the name of the stock is modified to prevent any error on table creation. See line 279.
         key = tp.fix_stock_name(key)
         company_query = """
                 CREATE TABLE IF NOT EXISTS
@@ -40,88 +41,120 @@ def create_db_tables(connection, stock_dict):
                 """
         sqlh.execute_query(connection, company_query)
 
+# Set of auxiliary functions. They are meant to help to check a record existence for a given date because the query
+# to write the data changes
+
+# Checks on date_ids table the associate numeric id to a certain date
+def get_date_id(connection, ref_date):
+    search_date_query = """SELECT id FROM date_ids WHERE date_ids.date = """ + "'" + ref_date + "'"
+    return sqlh.execute_read_query(connection, search_date_query)
+
+def check_date_existence(connection, ref_date):
+    return get_date_id(connection, ref_date) != []
+
+# Returns a row with all the stock information from the selected date.
+def get_record(connection, ref_date_id, selected_stock):
+    read_stock_query = """SELECT * FROM """ + selected_stock + """ WHERE """ + selected_stock + ".date_id = " + str(
+        ref_date_id)
+    return sqlh.execute_read_query(connection, read_stock_query)
+
+def check_record_existence(connection, ref_date_id, selected_stock):
+    return get_record(connection, ref_date_id, selected_stock) != []
+
+
+
 
 def add_stock_data(connection, stock_dict):
     # All the stocks were tracked on the same dates, 'AAPL' was selected just because it's the first named and it's not
     # a new stock in the market.
-
-    # Here it's inserted a new date
     key = 'AAPL'
-    # The key must be uppercase
-    company_stock = stock_dict[key.upper()]
-    date_query = """INSERT INTO date_ids(date)
-                    VALUES (%s)"""
-    insert_date_tuple = (company_stock.date, )
-    sqlh.execute_insertion_query(connection, date_query, insert_date_tuple)
+    company_stock = stock_dict[key]
+    ref_date = company_stock.date
+    # Here a new date is inserted. Code added to prevent that a single date can have several ids.
+    if not check_date_existence(connection, ref_date):
+        date_query = """INSERT INTO date_ids(date)
+                        VALUES (%s)"""
+        insert_date_tuple = (ref_date, )
+        sqlh.execute_insertion_query(connection, date_query, insert_date_tuple)
+    else:
+        print("Date already inserted")
 
-    # This code writes the downloaded information on each company table
-    ref_string = 'pbi'
+    # Obtain the id number associated with the last date
+    ref_date_id = get_date_id(connection, ref_date)
+    ref_date_id = ref_date_id[0][0]
+
+    # This section writes the downloaded information on each company table
     for key in stock_dict:
-        # if min(key.lower(), ref_string) == ref_string:
-            print(key)
-            # if key.lower() == ref_string:
-            #     date_id = 13
-            # else:
-            company_stock = stock_dict[key]
-            curr_date = company_stock.date
-            date_id_query = """SELECT * FROM date_ids WHERE date = %s"""
-            date_id_found = sqlh.execute_read_query(connection, date_id_query, (datetime.strptime(curr_date, '%Y-%m-%d'),))
-            date_id = date_id_found[0][0]
-            print(key)
-            print(date_id_found)
-
+        company_stock = stock_dict[key]
+        # If there is no record made for a given date, it will store it. If there is a previous one, it's overwritten
+        # to update the data.
+        if not check_record_existence(connection, ref_date_id, key):
             stock_data_query = """
                 INSERT INTO """ + key + """(DATE_ID, OPENING, CLOSING, MIN_PRICE, MAX_PRICE, AMOUNT_EXCHANGED, DAILY_VARIATION)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)"""
 
-            insert_stock_tuple = (date_id, company_stock.opening, company_stock.closing, company_stock.min_price,
+            insert_stock_tuple = (ref_date_id, company_stock.opening, company_stock.closing, company_stock.min_price,
                                   company_stock.max_price, company_stock.amount_exchanged, company_stock.daily_variation)
             sqlh.execute_insertion_query(connection, stock_data_query, insert_stock_tuple)
+        else:
+            stock_data_query = """UPDATE """ + key + """ SET OPENING = %s, CLOSING = %s, MIN_PRICE = %s, MAX_PRICE = %s, AMOUNT_EXCHANGED = %s, DAILY_VARIATION = %s WHERE """ + key + ".date_id = %s"
 
-def read_db(connection):
-    # There were some stocks which names contain a point. To be able to query the corresponding table, you should
-    # replace the point with an underscore.
-    # In the case of the stock named 'MOD', it's called as a MySQL operator. For this reason, it's renamed as 'MOD_STK'
+            update_stock_tuple = (company_stock.opening, company_stock.closing, company_stock.min_price,
+                                  company_stock.max_price, company_stock.amount_exchanged, company_stock.daily_variation,
+                                  ref_date_id)
+            sqlh.execute_insertion_query(connection, stock_data_query, update_stock_tuple)
 
-    # If you want to select a single stock, it's important to put its name between brackets
-    # selected_companies = ['aapl']
-    selected_companies = ['aapl', 'ba_c', 'mod_stk']
-    # If you want to select a specific date (not an interval), you should put it between parenthesis and with a comma
-    # at the end, like in the following line:
-    # desired_dates = (datetime(YYYY, MM, DD),)
-    desired_dates = (datetime(2021, 5, 11), datetime(2021, 5, 12))
-    dates_length = len(desired_dates)
 
-    if dates_length == 1:
-        read_date_query = """SELECT * FROM date_ids WHERE date = %s"""
-    elif dates_length == 2:
-        read_date_query = """SELECT * FROM date_ids WHERE date BETWEEN %s AND %s"""
+def show_sample_stock_plots(connection, selected_stock):
+    # Here, the user can edit the date interval. The followed format is datetime(YYYY, MM, DD).
+    # When any of the dates is outside the range, the results include up to last date contained.
+    desired_dates = (datetime(2021, 6, 14), datetime(2021, 8, 30))
+    read_dates_query = """SELECT * FROM date_ids WHERE date BETWEEN %s AND %s"""
+    date_records = sqlh.execute_read_query(conn, read_dates_query, desired_dates)
+
+    if date_records == []:
+        print("There's no record between the given dates")
     else:
-        read_date_query = """SELECT * FROM date_ids"""
+        id_col = 0
+        date_col = 1
+        date_list = [current_date[:][date_col] for current_date in date_records]
 
-    date_list = sqlh.execute_read_query(connection, read_date_query, desired_dates)
-    id_row = 0
-    date_row = 1
-
-    result_dict = {}
-
-    for company in selected_companies:
-        print(company)
-        stock_list = []
+        stock_records_list = []
         for date_id in range(len(date_list)):
-            read_single_query = """SELECT * FROM """ + company + " WHERE DATE_ID = " + str(date_list[date_id][id_row])
-            company_row = sqlh.execute_read_query(connection, read_single_query)
-            print(date_list[date_id][date_row])
-            print(company_row)
-            stock_list.append(company_row)
-        print('\n')
-        result_dict[company] = stock_list
+            read_stock_query = """SELECT * FROM """ + selected_stock + " WHERE DATE_ID = " + str(date_records[date_id][id_col])
+            stock_records = sqlh.execute_read_query(conn, read_stock_query)
+            stock_records_list.append(stock_records)
+        stock_records_list = [elem[0] for elem in stock_records_list]
+
+        date_id = 0
+        opening = 1
+        closing = 2
+        min_price = 3
+        max_price = 4
+        amount_exchanged = 5
+        daily_variation = 6
+
+        # Get a list with all the stock names
+        read_names_query = "SHOW TABLES"
+        stock_names_list = sqlh.execute_read_query(connection, read_names_query)
+        stock_names_list = [stock_name[:][0] for stock_name in stock_names_list]
+        stock_names_list.remove('date_ids')
+
+        opening_list = [stock_tuple[opening] for stock_tuple in stock_records_list]
+        closing_list = [stock_tuple[closing] for stock_tuple in stock_records_list]
+        minimum_price_list = [stock_tuple[min_price] for stock_tuple in stock_records_list]
+        maximum_price_list = [stock_tuple[max_price] for stock_tuple in stock_records_list]
+        amount_xch_list = [stock_tuple[amount_exchanged] for stock_tuple in stock_records_list]
+
+        sp.ohlc_plot(opening_list, maximum_price_list, minimum_price_list, closing_list, date_list, stock_names_list,
+                     selected_stock)
+        sp.draw_amount_exchanged(amount_xch_list, date_list, stock_names_list, selected_stock)
 
 
 def main():
 
     # Load into a variable the HTML code of the page
-    url = 'https://www.invertironline.com/mercado/cotizaciones/argentina/cedears/todos'
+    url = 'https://iol.invertironline.com/mercado/cotizaciones/argentina/cedears/todos'
     response = requests.get(url)
     web_content = BeautifulSoup(response.text, 'lxml')
 
@@ -223,7 +256,8 @@ if __name__ == "__main__":
     host_name = "localhost"
     user_name = "root"
     user_password = "Darkwater_06"
-    db = "14th_jun_db"
+    # db = "14th_jun_db"
+    db = "dates_test_db"
 
     # Execute these lines to create the database. It doesn't overwrite an existing one with same name.
     conn = sqlh.create_connection(host_name, user_name, user_password)
@@ -239,11 +273,15 @@ if __name__ == "__main__":
     # It stores the downloaded data in the database
     add_stock_data(conn, stock_dict)
 
-    # This function is used to print stock parameters on selected date(s). The user can edit the variables named
-    # selected companies and desired dates.
-    # read_db(conn)
-    conn.close()
+    # This function is used to plot stock parameters on selected dates. They can be edited inside the function.
+    # Stock names:
+    # There are some stocks which names contain a point. To be able to query the corresponding table, you should
+    # replace the point with an underscore.
+    # In the case of the stock named 'MOD', it's called as a MySQL operator. For this reason, it's renamed as 'MOD_STK'
+    # show_sample_stock_plots(conn, 'aapl')
 
     # If you need to erase the database, execute this lines
     # erase_db_query = "DROP DATABASE " + db
     # sqlh.execute_query(conn, erase_db_query)
+
+    conn.close()

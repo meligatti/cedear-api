@@ -45,7 +45,7 @@ def fixed_point_conversion(str_number):
     return float(str_fixed_point)
 
 # Function to fix some bugs related with stock names with points or that which has
-# same name as SQL operator
+# same name as SQL operator. See line 279 from main.py.
 def fix_stock_name(stock_name):
     clean_stock_name = clean_data(stock_name)
     # Replace points in stock name to avoid errors in table name
@@ -54,6 +54,18 @@ def fix_stock_name(stock_name):
     if clean_stock_name == "MOD":
         key = "MOD_STK"
     return key
+
+# Function to get the original stock name for those that had changed.
+def revert_stock_name_fix(stock_name):
+    if stock_name == 'mod_stk':
+        reversed_stock_name = 'mod'
+    elif '_' in stock_name:
+        reversed_stock_name = stock_name.replace('_', '.')
+    else:
+        reversed_stock_name = stock_name
+    return reversed_stock_name
+
+
 
 # Check if is possible to find a key in a tag
 def is_key_in_tag(tag, key):
@@ -66,3 +78,15 @@ def clean_hour_str(hour_str):
     hour_offset = 5
     (start, _) = get_hour_index(hour_str)
     return hour_str[start : start + hour_offset]
+
+
+# Auxiliary functions that help to determine a stock currency
+
+def is_base_stock_name(str_to_eval, substr):
+    return substr == str_to_eval
+
+def is_usd_stock_exception(str_to_eval):
+    return str_to_eval == 'bad' or str_to_eval == 'c_d' or str_to_eval == 'gogld' or str_to_eval == 'mod_stk' or str_to_eval == 'vd'
+
+def is_ars_stock_exception(str_to_eval):
+    return str_to_eval == 'bbd' or str_to_eval == 'tmd'
