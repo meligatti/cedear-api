@@ -29,6 +29,7 @@ def draw_markers(x_coord, y_coord, day_extr):
     draw_line(line_x_coord, line_y_coord, plot_color)
     draw_line([x_coord, x_coord], y_coord, plot_color)
 
+
 # Function to configure the vertical axis of the amount exchanged plot. The number of ticks (marks) can be edited.
 def format_y_axis(values_list):
     tick_number = 5
@@ -40,6 +41,8 @@ def format_y_axis(values_list):
     else:
         tick_labels = ['{:.1f}M'.format(i / 1000000) for i in tick_list]
     plt.yticks(tick_list, tick_labels)
+
+
 
 def set_labels(title, x_label, y_label):
     plt.title(title)
@@ -81,7 +84,7 @@ def draw_amount_exchanged(amount, dates, stock_list, sel_stock, amount_ax = None
         format_y_axis(amount)
         amount_ax.xaxis_date()
         amount_fig.autofmt_xdate()
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.show()
     else:
         print('Check list lengths')

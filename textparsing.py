@@ -1,6 +1,9 @@
 import re
 from datetime import datetime
 
+
+# Set of functions meant to search hour or date in a string and to reformate a certain date.
+
 def get_hour_index(hour):
     hour_match = re.search("[0-2][0-9]:[0-5][0-9]", hour)
     return hour_match.span()
@@ -19,6 +22,12 @@ def reformat_date(str_date):
     date_datetime = datetime.strptime(str_date, '%d/%m/%Y')
     return date_datetime.strftime('%Y-%m-%d')
 
+def clean_hour_str(hour_str):
+    hour_offset = 5
+    (start, _) = get_hour_index(hour_str)
+    return hour_str[start : start + hour_offset]
+
+
 # The data has some extra symbols (\r\n) which must be removed
 def clean_data(data):
     removable_chars = '\r\n '
@@ -33,8 +42,8 @@ def check_if_today(data_orig_title_content):
     else:
         return True
 
-# Function to convert strings into decimal numbers
 
+# Function to convert strings into decimal numbers
 def remove_separator_points(str_number):
     return str_number.replace('.', '')
 
@@ -44,8 +53,9 @@ def fixed_point_conversion(str_number):
     str_fixed_point = str_no_point.replace(',', '.')
     return float(str_fixed_point)
 
+
 # Function to fix some bugs related with stock names with points or that which has
-# same name as SQL operator. See line 279 from main.py.
+# same name as SQL operator. See line 35 from main.py.
 def fix_stock_name(stock_name):
     clean_stock_name = clean_data(stock_name)
     # Replace points in stock name to avoid errors in table name
@@ -74,10 +84,6 @@ def is_key_in_tag(tag, key):
         result = True
     return result
 
-def clean_hour_str(hour_str):
-    hour_offset = 5
-    (start, _) = get_hour_index(hour_str)
-    return hour_str[start : start + hour_offset]
 
 
 # Auxiliary functions that help to determine a stock currency

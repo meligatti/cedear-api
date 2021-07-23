@@ -1,26 +1,30 @@
 # CEDEAR API
 
 This program is intended to read the daily records from the webpage Invertir Online and store the different parameters
-of the CEDEAR stock values in a relational database (MySQL).
+of the CEDEAR stock values in a relational database (MySQL). The stored data can be visualized by the user.  
 
 ## Dependences
-This was written and tested on Python 3.6. It's necessary to install the packages beautifulsoup4 (4.9.1), requests (2.23.0) 
+This API was written and tested on Python 3.6. It's necessary to install the packages beautifulsoup4 (4.9.1), requests (2.23.0), matplotlib (3.2.1),
 and mysql-connector-python (8.0.21).
 
-The database on the test was local, so you'll need to install MySQL Community Edition Workbench (8.0.21) which can be 
-downloaded on: https://dev.mysql.com/downloads/workbench/ . The user should set the hostname as localhost to execute a local database and I've made the tests using the root user.
+The database used was local, so you'll need to install MySQL Community Edition Workbench (8.0.21) which can be 
+downloaded on: https://dev.mysql.com/downloads/workbench/. The user should set the hostname as localhost to execute a local database and I've made the tests using the root user.
 
 ## Execution
-The program must be executed from the main file. There is a function that creates the database if not exists and another one
+The program must be executed from the main file. There's a function that creates the database if not exists and another one
 that fills the db with all the tables (one with the dates tracked and one per company).
 
-To check the correct working, there is another function (called _read_db_) that can be used to read a table from some companies in a date range 
-or a single day specified by the user. The data table on Invertir Online refreshes periodically every 20 minutes up to 5 pm (time in Argentina) on working days.  
+In the folder _'sample_db_dump'_, you can load a dump from the database used to have your own copy. It covers from 
+06/14/2021 to 07/20/2021. To do that, you'll need to enter into MySQL Workbench, create your database in a query tab and
+then import the provided .sql file onto your db. 
 
-__NOTE:__ This is a working first version, and it has a known bug to fix. 
-It is related with the possibility of writing data on the database several times from the same day. For this reason, I suggest
-to run the software after the last table update to guarantee that there will be just one record (the final one) per day until the bug can be fixed.
-is fixed.
+To check the proper working, you should use the function called _show_sample_stock_plot_ that can be used to read a table
+from a company specified by the user and a date range and see the corresponding plots (OHLC and amount exchanged).
+
+The data table on Invertir Online refreshes periodically every 20 minutes up to 5 pm (time in Argentina) on working days,
+so take this into account to make sure that you'll store the final daily data. It's convenient to run the program when 
+the _'Último Operado'_ and _'Último cierre'_ values are the same.
+
 
 
 

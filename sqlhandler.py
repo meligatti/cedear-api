@@ -1,6 +1,8 @@
 import mysql.connector
 from mysql.connector import Error
 
+# Set of functions that perform MySQL operations in a lower layer than dboperations. They make all the steps necessary
+# to connect to a MySQL database and perform the operations.
 
 def create_connection(host_name, user_name, user_password, db = None):
     connection = None
@@ -22,7 +24,6 @@ def create_connection(host_name, user_name, user_password, db = None):
 
     return connection
 
-
 def execute_query(connection, query):
     my_cursor = connection.cursor()
     try:
@@ -39,6 +40,15 @@ def execute_insertion_query(connection, query, content):
         cursor.close()
     except Error as e:
         print("Failed to insert data {}".format(e))
+
+def execute_deletion_query(connection, query, content):
+    try:
+        cursor = connection.cursor()
+        cursor.executemany(query, content)
+        connection.commit()
+        cursor.close()
+    except Error as e:
+        print("Failed to delete data {}".format(e))
 
 def execute_read_query(connection, query, content = None):
     cursor = connection.cursor()
