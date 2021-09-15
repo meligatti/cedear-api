@@ -29,9 +29,19 @@ the _'Último Operado'_ and _'Último cierre'_ values are the same.
 
 Note that the amount exchanged doesn't match exactly between both versions. Although in the table shown on the website the amount exchanged refers to the amount of money traded, in the historical 
 charts it refers to the amount of purchased/sold shares.
+The first images correspond with the Invertir Online ones, while the other two are the outputs of the program.
 
+### MELI (Mercado Libre)
+![MELI_IOL](https://github.com/meligatti/cedear-api/blob/master/imgs/Iol/MELI.PNG)
+<p float = "middle">
+  <img src = "https://github.com/meligatti/cedear-api/blob/master/imgs/Program/MELI_jun-jul.png" width = "45%" height = "70%">  
+  <img src = "https://github.com/meligatti/cedear-api/blob/master/imgs/Program/MELI_amt_jun-jul.png" width = "45%" height = "70%">
+</p>  
 
-
-
-
+### NFLX (Netflix)
+![NFLX_IOL](https://github.com/meligatti/cedear-api/blob/master/imgs/Iol/NFLX.PNG)
+<p float = "middle">
+  <img src = "https://github.com/meligatti/cedear-api/blob/master/imgs/Program/NFLX_aug.png" width = "45%" height = "70%">  
+  <img src = "https://github.com/meligatti/cedear-api/blob/master/imgs/Program/NFLX_amt_aug.png" width = "45%" height = "70%">
+</p>  
 
