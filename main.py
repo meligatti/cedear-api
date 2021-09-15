@@ -13,8 +13,8 @@ if __name__ == "__main__":
     # Database configuration
     host_name = "localhost"
     user_name = "root"
-    user_password = "Darkwater_06"
-    db = "sample_cedears_db"
+    user_password = "your_password"
+    db = "your_db_name"
 
     # Execute these lines to create the database. It doesn't overwrite an existing one with same name.
     conn = sqlh.create_connection(host_name, user_name, user_password)
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # the existing ones.
     dbo.create_db_tables(conn, stock_dict)
     # It stores the downloaded data in the database
-    # dbo.add_stock_data(conn, stock_dict)
+    dbo.add_stock_data(conn, stock_dict)
 
     # This function is used to plot stock parameters on selected dates. The user can edit the date interval. The
     # followed format is datetime(YYYY, MM, DD). When any of the dates is outside the range, the results include up to
@@ -38,7 +38,8 @@ if __name__ == "__main__":
     # In the case of the stock named 'MOD', it's called as a MySQL operator. For this reason, it's renamed as 'MOD_STK'
     # Here, the user can edit the date interval. The followed format is datetime(YYYY, MM, DD).
     # When any of the dates is outside the range, the results include up to last date contained.
-    desired_dates = (datetime(2021, 6, 14), datetime(2021, 6, 23))
+    desired_dates = (datetime(2021, 7, 1), datetime(2021, 7, 30))
+    dbo.read_all_stocks_row(conn, 'aapl')
     dbo.show_sample_stock_plots(conn, 'aapl', desired_dates)
 
     # If you need to erase the database, execute this lines

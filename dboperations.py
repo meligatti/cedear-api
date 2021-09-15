@@ -62,6 +62,13 @@ def get_record(connection, ref_date_id, selected_stock):
 def check_record_existence(connection, ref_date_id, selected_stock):
     return get_record(connection, ref_date_id, selected_stock) != []
 
+def read_all_stocks_row(connection, selected_stock):
+    read_all_query = """SELECT date, opening, closing, min_price, max_price, amount_exchanged, daily_variation FROM date_ids, """ + \
+                     selected_stock + """ WHERE date_ids.id = """ + selected_stock + """.date_id ORDER BY date"""
+    all_records = sqlh.execute_read_query(connection, read_all_query)
+    for record in all_records:
+        print(record)
+
 
 # Writes the downloaded information from 'Invertir Online' onto the tables from each company.
 def add_stock_data(connection, stock_dict):
@@ -91,9 +98,10 @@ def add_stock_data(connection, stock_dict):
             stock_data_query = """
                 INSERT INTO """ + key + """(DATE_ID, OPENING, CLOSING, MIN_PRICE, MAX_PRICE, AMOUNT_EXCHANGED, DAILY_VARIATION)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-
+            # print(stock_data_query)
             insert_stock_tuple = (ref_date_id, company_stock.opening, company_stock.closing, company_stock.min_price,
                                   company_stock.max_price, company_stock.amount_exchanged, company_stock.daily_variation)
+            # print(insert_stock_tuple)
             sqlh.execute_insertion_query(connection, stock_data_query, insert_stock_tuple)
         else:
             stock_data_query = """UPDATE """ + key + """ SET OPENING = %s, CLOSING = %s, MIN_PRICE = %s, MAX_PRICE = %s, AMOUNT_EXCHANGED = %s, DAILY_VARIATION = %s WHERE """ + key + ".date_id = %s"
@@ -101,15 +109,19 @@ def add_stock_data(connection, stock_dict):
             update_stock_tuple = (company_stock.opening, company_stock.closing, company_stock.min_price,
                                   company_stock.max_price, company_stock.amount_exchanged, company_stock.daily_variation,
                                   ref_date_id)
+            # print(update_stock_tuple)
             sqlh.execute_insertion_query(connection, stock_data_query, update_stock_tuple)
 
 # Deletes the rows from the dates indicated by the user.
 def delete_stock_rows(connection, stock_dict, datetimes_to_delete):
+    dates_to_erase = [x.strftime("%Y-%m-%d") for x in datetimes_to_delete]
     id_list = []
     # Generate a list of ids associated with the dates to be deleted.
-    for dtime in datetimes_to_delete:
-        get_id_query = """SELECT id FROM date_ids WHERE date = %s"""
-        desired_id = sqlh.execute_read_query(connection, get_id_query, dtime)
+    for dtime in dates_to_erase:
+        # get_id_query = """SELECT id FROM date_ids WHERE date = %s"""
+        # print(dtime)
+        # desired_id = sqlh.execute_read_query(connection, get_id_query, dtime)
+        desired_id = get_date_id(connection, dtime)
         desired_id = desired_id[:][0]
         id_list.append(desired_id)
     # Iterate over the database to erase the rows listed above.
