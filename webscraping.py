@@ -16,7 +16,7 @@ def iol_parsing():
 
     # Each element in a website has a unique id. In this case, the table is named as "cotizaciones".
     # It has a header <thead>, a body <tbody> and a footer <tfoot>.
-    table_results = web_content.find(id='cotizaciones')
+    table_results = web_content.find(id = 'cotizaciones')
 
     # Each row represents a company, so I generate a list of all rows <TableRow>.
     table_rows = table_results.find_all('tr')
@@ -30,7 +30,7 @@ def iol_parsing():
 
     # This dictionary contains the data fields of the table
     column_dict = {"href": 0,
-                   "UltimoOperado": 1,
+                   "UltimoPrecio": 1,
                    "Variacion": 2,
                    "CantidadCompra": 3,
                    "PrecioCompra": 4,
@@ -81,7 +81,7 @@ def iol_parsing():
             elif key == "Maximo":
                 new_stock.max_price = tp.fixed_point_conversion(stock_tags[0])
 
-            elif key == "UltimoCierre":
+            elif key == "UltimoPrecio":
                 new_stock.closing = tp.fixed_point_conversion(stock_tags[0])
 
             elif key == "MontoOperado":

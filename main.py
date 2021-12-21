@@ -17,9 +17,9 @@ if __name__ == "__main__":
     db = "your_db_name"
 
     # Execute these lines to create the database. It doesn't overwrite an existing one with same name.
-    conn = sqlh.create_connection(host_name, user_name, user_password)
-    dbo.create_db(conn, db)
-    conn.close()
+    # conn = sqlh.create_connection(host_name, user_name, user_password)
+    # dbo.create_db(conn, db)
+    # conn.close()
 
     conn = sqlh.create_connection(host_name, user_name, user_password, db)
 
